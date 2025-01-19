@@ -22,14 +22,15 @@ vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter", "CursorHold", "CursorHo
     command = 'if mode() != "c" | checktime | endif'
 })
 
-utils = require("utils")
-require("game_gd_story").register_cmd()
+--utils = require("utils")
+--require("game_gd_story").register_cmd()
 
 
 
 vim.api.nvim_set_keymap("n", "<leader>rr", "<cmd>lua vim.lsp.buf.references()<CR>", { noremap = true, silent = true })
 vim.api.nvim_set_keymap("n", "<leader>rn", "<cmd>lua vim.lsp.buf.rename()<CR>", { noremap = true, silent = true })
 vim.api.nvim_set_keymap('n', '<leader>ww', '<cmd>lua vim.lsp.buf.hover()<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap("n", "<leader>ca", "<cmd>lua vim.lsp.buf.code_action()<CR>", { noremap = true, silent = true })
 vim.api.nvim_set_keymap('n', '<leader>ff', '<cmd>Telescope find_files<CR>', { noremap = true, silent = true })
 vim.api.nvim_set_keymap("n", "<leader>fg", "<cmd>lua require('telescope.builtin').live_grep()<CR>", { noremap = true, silent = true})
 vim.api.nvim_set_keymap('n', '<leader>y', ':silent! !echo -n % | pbcopy<CR>', { noremap = true })
@@ -38,6 +39,7 @@ vim.api.nvim_set_keymap('n', '<leader>fr', '<cmd>lua require("telescope.builtin"
 vim.opt.incsearch = true
 vim.api.nvim_set_keymap('n', '<leader>fi', ':e <C-R>=expand("%:p:h") . "/" <CR>', { noremap = true, silent = false })
 
+vim.lsp.set_log_level("off")
 
 
 vim.o.autoread = true
@@ -53,7 +55,7 @@ vim.api.nvim_set_keymap("n", "<F6>", ":UndotreeToggle<CR>", {noremap = true, sil
 
 
 vim.api.nvim_create_autocmd("FileType", {
-    pattern = {"python", "lua", "cpp", "cxx", "cc", "ino", "arduino", "go"},
+    pattern = {"python", "lua", "cpp", "cxx", "cc", "ino", "arduino", "go", "rust"},
     callback = function()
         vim.keymap.set("n", "gd", vim.lsp.buf.definition, {buffer=true})
     end
@@ -90,7 +92,9 @@ require('packer').startup(function()
     use {p .. "save_load_dapui_watches"}
     --	use {p .. "dap_pause_on_exception"}
 
-    use 'kyazdani42/nvim-tree.lua' -- File explorer
+    use {
+        'kyazdani42/nvim-tree.lua',
+    }
     use {
         'nvim-treesitter/nvim-treesitter',
         run = ':TSUpdate'
@@ -134,6 +138,7 @@ require('packer').startup(function()
         "nvim-neotest/nvim-nio"} 
     }
     use { 'theHamsta/nvim-dap-virtual-text' }
+    use 'simrat39/rust-tools.nvim'
     use {
         'nvim-telescope/telescope.nvim',
         requires = { {'nvim-lua/plenary.nvim'} }
@@ -173,6 +178,11 @@ require('packer').startup(function()
 end)
 vim.cmd [[colorscheme moonfly]]
 
+utils = require("utils")
+
+
+
+
 
 -- Setup nvim-tree
 local nvim_tree = require('nvim-tree').setup {
@@ -182,6 +192,9 @@ local nvim_tree = require('nvim-tree').setup {
     diagnostics = {
         enable = true,
     },
+    filters = {
+        custom = { ".tscn" }
+    }
 }
 
 
@@ -333,6 +346,13 @@ local f = require("dap_pause_on_exception")
 lspconfig.lua_ls.setup{
     settings = lua_settings
 }
+
+lspconfig.gdscript.setup{
+    on_attach = on_attach
+}
+
+lspconfig.rust_analyzer.setup{}
+
 
 --local null_ls = require("null-ls")
 --null_ls.setup({
@@ -556,11 +576,30 @@ dap.configurations.python = {
     },
 }
 
+dap.adapters.codelldb = {
+    type = 'server',
+    host = '127.0.0.1',
+    port = 13000
+}
+
+dap.configurations.rust = {
+    {
+        name = "Debug",
+        type = 'codelldb',
+        request = 'launch',
+        program = function()
+            return vim.fn.input('Path to executable: ', vim.fn.getcwd() .. '/target/debug/', 'file')
+        end,
+        cwd = '${workspaceFolder}',
+        terminal = 'integrated',
+        sourceLanguages = { 'rust' }
+    }
+}
 
 dap.adapters.cppdbg = {
     id = "cppdbg",
     type = "executable",
-    command = vim.fn.expand("~/opt/cppdbg/extension/debugAdapters/bin/OpenDebugAD7"),
+    command = vim.fn.expand("~/apt/cppdbg/extension/debugAdapters/bin/OpenDebugAD7"),
 }
 
 dap.configurations.cpp = {
