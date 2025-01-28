@@ -38,6 +38,8 @@ vim.api.nvim_set_keymap('n', '<leader>cd', ':cd %:p:h<CR>', { noremap = true, si
 vim.api.nvim_set_keymap('n', '<leader>fr', '<cmd>lua require("telescope.builtin").lsp_references()<CR>', { noremap = true, silent = true })
 vim.opt.incsearch = true
 vim.api.nvim_set_keymap('n', '<leader>fi', ':e <C-R>=expand("%:p:h") . "/" <CR>', { noremap = true, silent = false })
+vim.api.nvim_set_keymap("n", "<leader>sh", ":ClangdSwitchSourceHeader<CR>", { noremap = true, silent = true })
+
 
 vim.lsp.set_log_level("off")
 
@@ -175,6 +177,7 @@ require('packer').startup(function()
     use 'EdenEast/nightfox.nvim'
     use 'NTBBloodbath/doom-one.nvim'
     use 'bluz71/vim-moonfly-colors'
+    use 'mrcjkb/rustaceanvim'
 end)
 vim.cmd [[colorscheme moonfly]]
 
@@ -351,7 +354,43 @@ lspconfig.gdscript.setup{
     on_attach = on_attach
 }
 
-lspconfig.rust_analyzer.setup{}
+vim.g.rustaceanvim = {
+    server = {
+        default_settings = {
+            ['rust-analyzer'] = {
+                cargo = {
+                    features = {"full"},
+                    extraEnv = {
+                        RUSTFLAGS = "--cfg tokio_unstable"
+                    },
+                },
+                check = {
+                    features = {"full"},
+                },
+                procMacro = {
+                    enable = true,
+                }
+            }
+        }
+    }
+}
+
+--lspconfig.rust_analyzer.setup({
+--    settings = {
+--        ["rust-analyzer"] = {
+--            check = {
+--                command = "clippy",
+--                extraArgs = { "--cfg", "tokio_unstable" }
+--            },
+--            cargo = {
+--                extraArgs = { "--cfg", "tokio_unstable" }
+--            },
+--            procMacro = {
+--                enable = true
+--            }
+--        }
+--    }
+--})
 
 
 --local null_ls = require("null-ls")
