@@ -94,9 +94,7 @@ require('packer').startup(function()
     use {p .. "save_load_dapui_watches"}
     --	use {p .. "dap_pause_on_exception"}
 
-    use {
-        'kyazdani42/nvim-tree.lua',
-    }
+    use 'kyazdani42/nvim-tree.lua'
     use {
         'nvim-treesitter/nvim-treesitter',
         run = ':TSUpdate'
@@ -187,7 +185,6 @@ utils = require("utils")
 
 
 
--- Setup nvim-tree
 local nvim_tree = require('nvim-tree').setup {
     update_focused_file = {
         enable = true, -- Update the focused file on `BufEnter`
@@ -354,26 +351,46 @@ lspconfig.gdscript.setup{
     on_attach = on_attach
 }
 
+
+local codelldb_path = "/home/ubuntu/apt/codelldb/extension/adapter/codelldb"
+local liblldb_path = "/home/ubuntu/apt/codelldb/extension/lldb/lib/liblldb.so"
+local cfg = require('rustaceanvim.config')
+
 vim.g.rustaceanvim = {
     server = {
         default_settings = {
             ['rust-analyzer'] = {
-                cargo = {
-                    features = {"full"},
-                    extraEnv = {
-                        RUSTFLAGS = "--cfg tokio_unstable"
-                    },
-                },
+                check_on_save = true,
                 check = {
-                    features = {"full"},
+                    enable = true,
+                    command = 'cargo check',
+                    features = 'all',
                 },
                 procMacro = {
                     enable = true,
+                },
+                imports = {
+                    granularity = {
+                        group = "module",
+                    },
+                    prefix = "crate",
+                },
+                completion = {
+                    autoimport = {
+                        enable = true,
+                    },
+                    fullFunctionSignatures = {
+                        enable = true,
+                    }
                 }
             }
+        },
+        dap = {
+            adapter = cfg.get_codelldb_adapter(codelldb_path, liblldb_path),
         }
     }
 }
+
 
 --lspconfig.rust_analyzer.setup({
 --    settings = {
@@ -618,7 +635,11 @@ dap.configurations.python = {
 dap.adapters.codelldb = {
     type = 'server',
     host = '127.0.0.1',
-    port = 13000
+    port = 13000,
+    executable = {
+        command = codelldb_path,
+        args = {"--port", "13000"}
+    }
 }
 
 dap.configurations.rust = {
@@ -634,6 +655,7 @@ dap.configurations.rust = {
         sourceLanguages = { 'rust' }
     }
 }
+
 
 dap.adapters.cppdbg = {
     id = "cppdbg",
